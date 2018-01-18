@@ -46,11 +46,11 @@
 #include "PietteTech_DHT.h"
 
 extern "C" {
-#include "user_interface.h"
+// #include "user_interface.h"
 }
 
-// Thanks to Paul Kourany for this word type conversion function
-uint16_t word(uint8_t high, uint8_t low) {
+// Thanks to Paul Kourany for this getWord type conversion function
+uint16_t getWord(uint8_t high, uint8_t low) {
     uint16_t ret_val = low;
     ret_val += (high << 8);
     return ret_val;
@@ -81,7 +81,7 @@ void PietteTech_DHT::reset() {
 
 }
 
-int ICACHE_RAM_ATTR PietteTech_DHT::acquire() {
+int IRAM_ATTR PietteTech_DHT::acquire() {
     // Check if sensor was read less than two seconds ago and return early
     // to use last reading
     unsigned long currenttime = millis();
@@ -146,7 +146,7 @@ int ICACHE_RAM_ATTR PietteTech_DHT::acquire() {
 int PietteTech_DHT::acquireAndWait(uint32_t timeout=0) {
     uint32_t start = millis();
     uint32_t wrapper;
-    acquire();    
+    acquire();
     while(acquiring() && (timeout == 0 || (millis() > start && (millis()-start) < timeout))) {
         // Without this Soft WDT reset occurred when dht is not connected
         delay(0);
@@ -164,7 +164,7 @@ int PietteTech_DHT::acquireAndWait(uint32_t timeout=0) {
     return getStatus();
 }
 
-void ICACHE_RAM_ATTR PietteTech_DHT::isrCallback() {
+void IRAM_ATTR PietteTech_DHT::isrCallback() {
     unsigned long newUs = system_get_time();
     unsigned long delta = (newUs - _us);
     _us = newUs;
@@ -247,10 +247,10 @@ void PietteTech_DHT::convert() {
             break;
         case DHT22:
         case DHT21:
-            _hum = word(_bits[0], _bits[1]) * 0.1;
+            _hum = getWord(_bits[0], _bits[1]) * 0.1;
             _temp = (_bits[2] & 0x80 ?
-                     -word(_bits[2] & 0x7F, _bits[3]) :
-                     word(_bits[2], _bits[3])) * 0.1;
+                     -getWord(_bits[2] & 0x7F, _bits[3]) :
+                     getWord(_bits[2], _bits[3])) * 0.1;
             break;
     }
     _convert = false;
